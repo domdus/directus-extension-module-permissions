@@ -17,7 +17,7 @@
 			</sidebar-detail>
 		</template>
 
-		<div class="page">
+		<div :class="pageClass">
 			<p class="page-intro">
 				Back up or restore this extension’s visibility config (module rules, content, users, start pages,
 				sidebar) as JSON, or remove the dedicated <code>module_permissions</code> settings field before
@@ -113,7 +113,10 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { useModulePermissions } from './composables/use-module-permissions';
+import { usePageClass } from './composables/use-page-class';
 import ModuleNavigation from './navigation.vue';
+
+const pageClass = usePageClass();
 
 const {
 	loading,
@@ -193,6 +196,10 @@ async function runCleanup() {
 	padding-block-start: 0;
 	padding-block-end: var(--content-padding-bottom);
 	max-width: 720px;
+}
+
+.page--padded-top {
+	padding-block-start: var(--content-padding);
 }
 
 .section-divider {

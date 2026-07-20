@@ -23,7 +23,7 @@
 			</sidebar-detail>
 		</template>
 
-		<div class="page">
+		<div :class="pageClass">
 			<div v-if="loading" class="loading">
 				<v-progress-circular indeterminate />
 			</div>
@@ -259,7 +259,10 @@
 import { onMounted } from 'vue';
 import Draggable from 'vuedraggable';
 import { useModulePermissions } from './composables/use-module-permissions';
+import { usePageClass } from './composables/use-page-class';
 import ModuleNavigation from './navigation.vue';
+
+const pageClass = usePageClass();
 
 const {
 	loading,
@@ -304,6 +307,10 @@ onMounted(() => {
 	padding-block-start: 0;
 	padding-block-end: var(--content-padding-bottom);
 	max-width: 720px;
+}
+
+.page--padded-top {
+	padding-block-start: var(--content-padding);
 }
 
 .loading {
