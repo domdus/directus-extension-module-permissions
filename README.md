@@ -1,0 +1,125 @@
+# Module Permissions
+
+Control what non-admin users see in the Directus Data Studio — the left module bar, Content navigation, Users role tree, right sidebar, and where they land after login — based on their roles and policies.
+
+## Overview
+
+Directus stores the left module bar as a single project-wide setting. This extension brings back **per-role and per-policy visibility**, and adds similar controls for other Studio areas that often show more than certain teams should see.
+
+Open **Module Permissions** from the left bar (admins only). Rules only affect **non-admin** users. **Administrators always see everything** and are never redirected by these rules.
+
+> **Important:** Most of these controls change what appears in the interface. They are **not a full security lock**. Users may still reach data through the API or permissions if those allow it. Use Directus permissions for real access control; use this extension to tidy and simplify the Studio experience.
+
+## Features
+
+### Modules
+
+Reorder the left module bar, enable or disable entries, add custom links, and hide or show modules for selected roles and policies. Optionally block deep links when a module is hidden.
+
+<img alt="Modules settings" src="./docs/screenshot_modules.png" width="800" />
+
+- **Reorder & toggle** the left module bar (same idea as Project Settings → Modules)
+- **Add custom links** to the module bar
+- **Hide** a module for selected roles/policies, or **show it only** to those roles/policies
+- Optionally **block deep links** when a module is hidden (e.g. typing `/users` in the address bar)
+
+### Sidebar
+
+Hide individual right-sidebar panels, or force the whole sidebar collapsed or hidden for matched roles and policies.
+
+<img alt="Sidebar settings" src="./docs/screenshot_sidebar.png" width="800" />
+
+- **Hide individual right-sidebar panels** (Layout Options, Revisions, Comments, Activity Log, and more) for selected roles/policies
+- **Force the whole sidebar** collapsed (icons only) or fully hidden
+- Purely visual — does not change permissions
+
+### Content
+
+Hide collections from the Content navigation while keeping normal permissions for relations and the API.
+
+<img alt="Content settings" src="./docs/screenshot_content.png" width="800" />
+
+- **Hide collections** from the Content navigation for selected roles/policies
+- Collections stay available in relations and the API if permissions allow
+- Optionally **block deep links** to hidden collections
+
+### Users
+
+Control the Users module’s role tree and optionally hide the middle Module Navigation panel for selected modules.
+
+<img alt="Users settings" src="./docs/screenshot_users.png" width="800" />
+
+- **Own Role Only** — matched users only see their own role (and parent roles) in the Users navigation tree
+- **Role visibility** — hide or show specific roles in that tree
+- Optionally **block deep links** to hidden role pages
+- **Hide Module Navigation** — hide the middle navigation column for chosen modules (e.g. Users)
+
+### Start Page
+
+Choose where matched users land after login.
+
+<img alt="Start Page settings" src="./docs/screenshot_startpage.png" width="800" />
+
+- Set where matched users **land after login** (for example `/files` or `/content`)
+- Without **Force Redirect**, a user’s saved last page still wins
+- With **Force Redirect**, they go to your start page even if they have a last page
+- Explicit shared links with `?redirect=` still work as expected
+
+### Settings
+
+- **Export / import** your Module Permissions config as JSON (backup or move between projects)
+- **Remove extension data** cleanly before uninstall (only this extension’s settings — not your module bar order)
+
+## How rules work
+
+For most visibility options you pick:
+
+1. **Hide for matched roles/policies** — those people don’t see it  
+2. **Show only for matched roles/policies** — everyone else doesn’t see it  
+
+You can match by **role**, **policy**, or both. If either matches, the rule applies.
+
+Some lists (Start Page, Sidebar mode, Own Role Only, Hide Module Navigation) support a **catch-all**: leave roles and policies empty and place the rule last so it applies to everyone who didn’t match an earlier rule.
+
+## Installation
+
+### Manual Installation
+
+1. Install and build:
+
+```bash
+cd directus-extension-module-permissions
+npm install
+npm run build
+```
+
+2. Copy the built package into your Directus `extensions` folder (include `package.json` and the `dist` folder).
+
+3. Restart Directus.
+
+4. In the Data Studio:
+
+   1. Open **Settings → Project Settings → Modules**
+   2. Enable **Module Permissions**
+   3. Open **Module Permissions** from the left bar
+
+Requires **Directus 11 or 12**.
+
+## Getting started
+
+1. Open **Module Permissions** as an admin.
+2. Start with **Modules** — reorder the bar and hide modules your Editors or other roles shouldn’t see.
+3. Use **Sidebar**, **Content**, and **Users** to simplify those screens for the same roles.
+4. Set a **Start Page** if you want a clear landing page after login.
+5. Optionally **Export JSON** from Settings so you can restore the config later.
+
+## Tips
+
+- Always pair Studio visibility rules with the right **permissions** in Directus Access Control.
+- Test with a non-admin account (or another browser profile) after saving.
+- Export your config before major changes or before uninstalling.
+- Uninstall cleanup only removes this extension’s data — your normal module bar and other project settings stay intact.
+
+## License
+
+MIT

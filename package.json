@@ -1,0 +1,60 @@
+{
+	"name": "directus-extension-module-permissions",
+	"description": "Per-role/policy UI controls for the module bar, Content nav, Users role tree, Sidebar, and Start Page — with optional deep-link blocking",
+	"icon": "security",
+	"version": "1.0.0",
+	"license": "MIT",
+	"keywords": [
+		"directus",
+		"directus-extension",
+		"directus-extension-bundle",
+		"module-permissions",
+		"modules",
+		"permissions",
+		"content",
+		"users",
+		"sidebar",
+		"start-page",
+		"roles",
+		"policies"
+	],
+	"type": "module",
+	"files": [
+		"dist"
+	],
+	"directus:extension": {
+		"type": "bundle",
+		"path": {
+			"app": "dist/app.js",
+			"api": "dist/api.js"
+		},
+		"entries": [
+			{
+				"type": "module",
+				"name": "module-permissions",
+				"source": "src/module/index.ts"
+			},
+			{
+				"type": "hook",
+				"name": "module-permissions-hook",
+				"source": "src/hook/index.ts"
+			}
+		],
+		"host": ">=11.0.0 <13.0.0"
+	},
+	"scripts": {
+		"build": "directus-extension build",
+		"dev": "directus-extension build -w --no-minify",
+		"link": "directus-extension link",
+		"add": "directus-extension add"
+	},
+	"devDependencies": {
+		"@directus/extensions-sdk": "^17.0.0",
+		"@directus/types": "^13.0.0",
+		"typescript": "^5.0.0",
+		"vue": "^3.3.7"
+	},
+	"dependencies": {
+		"vuedraggable": "^4.1.0"
+	}
+}
