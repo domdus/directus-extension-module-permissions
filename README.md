@@ -16,7 +16,7 @@ Open **Module Permissions** from the left bar (admins only). Rules only affect *
 
 Reorder the left module bar, enable or disable entries, add custom links, and hide or show modules for selected roles and policies. Optionally block deep links when a module is hidden.
 
-<img alt="Modules settings" src="./docs/screenshot_modules.png" width="800" />
+<img alt="Modules settings" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_modules.png" width="800" />
 
 - **Reorder & toggle** the left module bar (same idea as Project Settings → Modules)
 - **Add custom links** to the module bar
@@ -27,7 +27,7 @@ Reorder the left module bar, enable or disable entries, add custom links, and hi
 
 Hide individual right-sidebar panels, or force the whole sidebar collapsed or hidden for matched roles and policies.
 
-<img alt="Sidebar settings" src="./docs/screenshot_sidebar.png" width="800" />
+<img alt="Sidebar settings" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_sidebar.png" width="800" />
 
 - **Hide individual right-sidebar panels** (Layout Options, Revisions, Comments, Activity Log, and more) for selected roles/policies
 - **Force the whole sidebar** collapsed (icons only) or fully hidden
@@ -37,7 +37,7 @@ Hide individual right-sidebar panels, or force the whole sidebar collapsed or hi
 
 Hide collections from the Content navigation while keeping normal permissions for relations and the API.
 
-<img alt="Content settings" src="./docs/screenshot_content.png" width="800" />
+<img alt="Content settings" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_content.png" width="800" />
 
 - **Hide collections** from the Content navigation for selected roles/policies
 - Collections stay available in relations and the API if permissions allow
@@ -47,7 +47,7 @@ Hide collections from the Content navigation while keeping normal permissions fo
 
 Control the Users module’s role tree and optionally hide the middle Module Navigation panel for selected modules.
 
-<img alt="Users settings" src="./docs/screenshot_users.png" width="800" />
+<img alt="Users settings" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_users.png" width="800" />
 
 - **Own Role Only** — matched users only see their own role (and parent roles) in the Users navigation tree
 - **Role visibility** — hide or show specific roles in that tree
@@ -58,7 +58,7 @@ Control the Users module’s role tree and optionally hide the middle Module Nav
 
 Choose where matched users land after login.
 
-<img alt="Start Page settings" src="./docs/screenshot_startpage.png" width="800" />
+<img alt="Start Page settings" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_startpage.png" width="800" />
 
 - Set where matched users **land after login** (for example `/files` or `/content`)
 - Without **Force Redirect**, a user’s saved last page still wins
