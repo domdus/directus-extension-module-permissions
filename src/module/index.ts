@@ -28,6 +28,14 @@ export default defineModule({
 			component: ModulesView,
 		},
 		{
+			path: 'navigation',
+			redirect: '/module-permissions/modules',
+		},
+		{
+			path: 'sidebar',
+			component: SidebarView,
+		},
+		{
 			path: 'content',
 			component: CollectionsView,
 		},
@@ -46,10 +54,6 @@ export default defineModule({
 		{
 			path: 'home-paths',
 			redirect: '/module-permissions/start-page',
-		},
-		{
-			path: 'sidebar',
-			component: SidebarView,
 		},
 		{
 			path: 'settings',

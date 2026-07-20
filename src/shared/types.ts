@@ -114,7 +114,7 @@ export type UsersRoleVisibilityRule = {
 
 /**
  * Hide Module Navigation (middle column) for listed module ids when user matches.
- * Empty roles+policies = catch-all.
+ * Empty roles+policies = catch-all. Managed from the Modules view (stored under users.hide_navigation).
  */
 export type HideNavigationRule = {
 	id: string;

@@ -3,7 +3,10 @@ import { MODULE_PERMISSIONS_FIELD, type ModulePermissionsConfig } from '../share
 
 const ENFORCER_FLAG = '__modulePermissionsUsersNavEnforcerInstalled';
 const STYLE_ID = 'mp-users-nav-enforcer-styles';
+/** Legacy html class — cleared on apply so old sessions don't keep broken layout CSS. */
 const HIDDEN_NAV_CLASS = 'mp-module-nav-hidden';
+/** Marked on the middle Module Navigation panel only (never the module icon bar). */
+const NAV_PANEL_ATTR = 'data-mp-module-nav-hidden';
 const ROLE_ATTR = 'data-mp-users-role-hidden';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -50,20 +53,11 @@ function ensureStyleEl(): HTMLStyleElement {
 }
 
 function buildChromeCss(): string {
-	// Only the middle Module Navigation column — never the left Module Bar.
-	//
-	// v12: Module Bar is `#navigation.module-bar` (sibling); middle is
-	//      `aside.module-nav` / `#module-navigation`.
-	// v11: `#navigation` is an <aside aria-label="Module Navigation"> that
-	//      WRAPS module-bar + v-resizeable(.module-nav). Never target that
-	//      aside by aria-label — it would hide the outer modules too.
+	// Hide only elements we explicitly mark with NAV_PANEL_ATTR.
+	// Do not restyle `.module-bar` — overriding its width to `auto` makes the
+	// icon buttons flow horizontally inside a wide rail.
 	return `
-html.${HIDDEN_NAV_CLASS} aside.module-nav,
-html.${HIDDEN_NAV_CLASS} #module-navigation,
-html.${HIDDEN_NAV_CLASS} .mobile-nav.module-nav,
-html.${HIDDEN_NAV_CLASS} #navigation > .v-resizeable,
-html.${HIDDEN_NAV_CLASS} #navigation > .v-resizeable .module-nav,
-html.${HIDDEN_NAV_CLASS} #navigation > .module-nav {
+[${NAV_PANEL_ATTR}] {
 	display: none !important;
 	width: 0 !important;
 	min-width: 0 !important;
@@ -73,21 +67,56 @@ html.${HIDDEN_NAV_CLASS} #navigation > .module-nav {
 	pointer-events: none !important;
 	border: none !important;
 }
-
-/* Belt-and-suspenders: never collapse the outer module icon rail */
-html.${HIDDEN_NAV_CLASS} #navigation.module-bar,
-html.${HIDDEN_NAV_CLASS} #navigation > .module-bar,
-html.${HIDDEN_NAV_CLASS} .module-bar {
-	display: flex !important;
-	visibility: visible !important;
-	pointer-events: auto !important;
-	width: auto !important;
-	min-width: unset !important;
-	max-width: none !important;
-	flex: none !important;
-	overflow: visible !important;
-}
 `.trim();
+}
+
+/**
+ * Middle Module Navigation panel(s) — never the left module icon bar.
+ *
+ * v12: `aside.module-nav` / `#module-navigation` (sibling of module-bar).
+ * v11: `#navigation` wraps module-bar + `.resize-wrapper` (v-resizeable root)
+ *      that contains `.module-nav`. Mark the resize-wrapper boundary.
+ */
+function findModuleNavPanels(): HTMLElement[] {
+	const panels: HTMLElement[] = [];
+	const push = (el: Element | null | undefined) => {
+		if (el instanceof HTMLElement && !panels.includes(el)) panels.push(el);
+	};
+
+	document.querySelectorAll('aside.module-nav, #module-navigation, .mobile-nav.module-nav').forEach((el) => {
+		// v11's outer #navigation also matches aria "Module Navigation" but not these selectors.
+		if (el.id === 'navigation' && el.querySelector(':scope > .module-bar, :scope > .resize-wrapper')) {
+			return;
+		}
+		push(el);
+	});
+
+	const navigation = document.querySelector('#navigation');
+	if (navigation) {
+		const wrapper =
+			navigation.querySelector(':scope > .resize-wrapper') ||
+			navigation.querySelector(':scope > .v-resizeable');
+		if (wrapper instanceof HTMLElement && wrapper.querySelector('.module-nav')) {
+			push(wrapper);
+		} else {
+			navigation.querySelectorAll('.module-nav').forEach((el) => {
+				if (!(el instanceof HTMLElement)) return;
+				if (el.closest('.module-bar')) return;
+				const parent = el.parentElement;
+				if (parent?.classList.contains('resize-wrapper')) push(parent);
+				else push(el);
+			});
+		}
+	}
+
+	return panels;
+}
+
+function clearModuleNavPanelMarks() {
+	document.documentElement.classList.remove(HIDDEN_NAV_CLASS);
+	document.querySelectorAll(`[${NAV_PANEL_ATTR}]`).forEach((node) => {
+		node.removeAttribute(NAV_PANEL_ATTR);
+	});
 }
 
 function roleIdFromHref(href: string | null): string | null {
@@ -238,39 +267,24 @@ function hideUsersRoleTree(pinia: any, currentPath: string) {
 }
 
 function applyModuleNavChrome(pinia: any, currentPath: string) {
-	const root = document.documentElement;
 	const config = getConfig(pinia);
 	const hiddenModules = new Set((config.navigation_hidden_modules || []).map(String));
 	const moduleId = extractModuleIdFromPath(currentPath);
 
 	ensureStyleEl().textContent = buildChromeCss();
+	clearModuleNavPanelMarks();
 
 	const shouldHide = Boolean(moduleId && hiddenModules.has(moduleId));
+	if (!shouldHide) return;
 
-	if (shouldHide) {
-		root.classList.add(HIDDEN_NAV_CLASS);
-	} else {
-		root.classList.remove(HIDDEN_NAV_CLASS);
-	}
-
-	// Directus 12+: collapse the nav split panel so we don't leave an empty gutter
-	try {
-		const navBarStore = getStoreState(pinia, 'nav-bar-store') as LooseStore & {
-			collapsed?: boolean;
-		} | null;
-		if (navBarStore && 'collapsed' in navBarStore) {
-			if (shouldHide) {
-				navBarStore.collapsed = true;
-			}
-		}
-	} catch {
-		// ignore
+	for (const panel of findModuleNavPanels()) {
+		panel.setAttribute(NAV_PANEL_ATTR, '');
 	}
 }
 
 function applyEnforcement(pinia: any, currentPath: string) {
 	if (isAdminUser(pinia)) {
-		document.documentElement.classList.remove(HIDDEN_NAV_CLASS);
+		clearModuleNavPanelMarks();
 		document.querySelectorAll(`[${ROLE_ATTR}]`).forEach((node) => {
 			node.removeAttribute(ROLE_ATTR);
 			(node as HTMLElement).style.removeProperty('display');

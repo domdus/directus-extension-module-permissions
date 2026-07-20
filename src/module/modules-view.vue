@@ -17,9 +17,9 @@
 		<template #sidebar>
 			<sidebar-detail icon="info" title="About" close>
 				<p class="sidebar-text">
-					Configure module bar order and enable/disable, then assign roles and/or policies with hide or show
-					rules. Admins are never affected. Deep links are blocked when a rule disables a module (unless
-					“Block deep links” is turned off).
+					Configure the left module bar and optionally hide the middle Module Navigation panel for matched
+					roles/policies. Admins are never affected. Deep links are blocked when a rule disables a module
+					(unless “Block deep links” is turned off).
 				</p>
 			</sidebar-detail>
 		</template>
@@ -30,6 +30,14 @@
 			</div>
 
 			<template v-else>
+				<v-divider
+					class="section-divider"
+					large
+					:style="{ '--v-divider-color': 'var(--theme--border-color-subdued)' }"
+				>
+					<template #icon><v-icon name="view_sidebar" class="icon-flip-x" /></template>
+					{{ 'Module Bar' }}
+				</v-divider>
 				<p class="page-intro">
 					Reorder the left module bar, enable or disable entries, and add custom links — the same controls as
 					Project Settings → Modules. Open an item to assign roles or policies that hide or show it for
@@ -93,6 +101,42 @@
 				</draggable>
 
 				<v-button class="add-link" @click="editLink('+')">Add Link</v-button>
+
+				<v-divider
+					class="section-divider add-margin-top"
+					large
+					:style="{ '--v-divider-color': 'var(--theme--border-color-subdued)' }"
+				>
+					<template #icon><v-icon name="menu" /></template>
+					{{ 'Hide Module Navigation' }}
+				</v-divider>
+				<p class="section-intro">
+					Hide the middle Module Navigation column for selected modules when the user matches. First matching
+					rule’s modules are merged for the user. Empty roles and policies = catch-all.
+				</p>
+
+				<draggable v-model="hideNavItems" item-key="id" handle=".drag-handle" :animation="150" class="list">
+					<template #item="{ element }">
+						<v-list-item block dense clickable class="module-row enabled" @click="editHideNav(element.id)">
+							<v-icon class="drag-handle" name="drag_handle" @click.stop />
+							<v-icon class="icon" name="menu" />
+							<div class="info">
+								<div class="name">Hide navigation</div>
+								<div class="to">{{ hideNavSummary(element) }}</div>
+							</div>
+							<div class="row-actions" @click.stop>
+								<v-button icon x-small secondary @click="editHideNav(element.id)">
+									<v-icon name="edit" />
+								</v-button>
+								<v-button icon x-small secondary @click="removeHideNav(element.id)">
+									<v-icon name="close" />
+								</v-button>
+							</div>
+						</v-list-item>
+					</template>
+				</draggable>
+
+				<v-button class="add-link" @click="editHideNav('+')">Add Hide-Navigation Rule</v-button>
 			</template>
 		</div>
 
@@ -185,6 +229,68 @@
 				<v-button v-if="hasRule(ruleEditingId!)" secondary @click="clearRule">Clear rule</v-button>
 			</div>
 		</v-drawer>
+
+		<v-drawer
+			:model-value="hideNavEditing !== null"
+			title="Hide Module Navigation"
+			icon="menu"
+			@update:model-value="onHideNavDrawerToggle"
+			@cancel="closeHideNavEditor"
+		>
+			<template #actions>
+				<v-button
+					v-tooltip.bottom="'Apply'"
+					:disabled="hideNavSaveDisabled"
+					icon
+					rounded
+					@click="saveHideNav"
+				>
+					<v-icon name="check" />
+				</v-button>
+			</template>
+
+			<div v-if="hideNavDraft" class="drawer-content">
+				<p class="hint">
+					Select modules whose middle navigation panel should be hidden. Empty roles and policies = catch-all.
+				</p>
+
+				<div class="field">
+					<label>Modules</label>
+					<v-select
+						v-model="hideNavDraft.modules"
+						multiple
+						:items="moduleSelectOptions"
+						item-text="text"
+						item-value="value"
+						placeholder="Select modules"
+					/>
+				</div>
+
+				<div class="field">
+					<label>Roles</label>
+					<v-select
+						v-model="hideNavDraft.roles"
+						multiple
+						:items="roleOptions"
+						item-text="text"
+						item-value="value"
+						placeholder="Select roles (optional)"
+					/>
+				</div>
+
+				<div class="field">
+					<label>Policies</label>
+					<v-select
+						v-model="hideNavDraft.policies"
+						multiple
+						:items="policyOptions"
+						item-text="text"
+						item-value="value"
+						placeholder="Select policies (optional)"
+					/>
+				</div>
+			</div>
+		</v-drawer>
 	</private-view>
 </template>
 
@@ -219,6 +325,17 @@ const {
 	onRuleDrawerToggle,
 	saveRule,
 	clearRule,
+	hideNavItems,
+	hideNavEditing,
+	hideNavDraft,
+	hideNavSaveDisabled,
+	moduleSelectOptions,
+	hideNavSummary,
+	editHideNav,
+	closeHideNavEditor,
+	onHideNavDrawerToggle,
+	saveHideNav,
+	removeHideNav,
 	ensureLoaded,
 	save,
 } = useModulePermissions();
@@ -252,6 +369,24 @@ onMounted(() => {
 	margin: 0 0 24px;
 	line-height: 1.55;
 	color: var(--theme--foreground);
+}
+
+.section-intro {
+	margin: 0 0 16px;
+	line-height: 1.55;
+	color: var(--theme--foreground);
+}
+
+.section-divider {
+	margin-bottom: 12px;
+}
+
+.section-divider.add-margin-top {
+	margin-top: 40px;
+}
+
+.icon-flip-x {
+	transform: scaleX(-1);
 }
 
 .list {

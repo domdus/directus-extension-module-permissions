@@ -17,8 +17,8 @@
 		<template #sidebar>
 			<sidebar-detail icon="info" title="About" close>
 				<p class="sidebar-text">
-					Control the Users module’s role tree in Module Navigation, and optionally hide that middle navigation
-					panel for specific modules. Admins are never affected. UI-only — not a security boundary.
+					Control the Users module’s role tree in Module Navigation. Admins are never affected. UI-only — not
+					a security boundary.
 				</p>
 			</sidebar-detail>
 		</template>
@@ -30,8 +30,7 @@
 
 			<template v-else>
 				<p class="page-intro">
-					Filter which roles appear in Users Module Navigation, and hide the middle navigation panel per
-					module for matched roles/policies.
+					Filter which roles appear in Users Module Navigation for matched roles/policies.
 				</p>
 
 				<v-divider
@@ -40,7 +39,7 @@
 					:style="{ '--v-divider-color': 'var(--theme--border-color-subdued)' }"
 				>
 					<template #icon><v-icon name="person" /></template>
-					Own Role Only
+					{{ 'Own Role Only' }}
 				</v-divider>
 				<p class="section-intro">
 					Matched users only see their own role (and parent roles) in the Users nav tree. First match wins;
@@ -82,7 +81,7 @@
 					:style="{ '--v-divider-color': 'var(--theme--border-color-subdued)' }"
 				>
 					<template #icon><v-icon name="badge" /></template>
-					Role visibility
+					{{ 'Role Visibility' }}
 				</v-divider>
 				<p class="section-intro">
 					Hide or show specific roles in the Users nav tree for matched roles/policies. Applied after own-role
@@ -123,42 +122,6 @@
 				</div>
 
 				<v-button class="add-link" @click="openUsersRoleEditor('+')">Add Role Rule</v-button>
-
-				<v-divider
-					class="section-divider add-margin-top"
-					large
-					:style="{ '--v-divider-color': 'var(--theme--border-color-subdued)' }"
-				>
-					<template #icon><v-icon name="view_sidebar" /></template>
-					Hide Module Navigation
-				</v-divider>
-				<p class="section-intro">
-					Hide the middle Module Navigation panel for selected modules when the user matches. First matching
-					rule’s modules are merged for the user.
-				</p>
-
-				<draggable v-model="hideNavItems" item-key="id" handle=".drag-handle" :animation="150" class="list">
-					<template #item="{ element }">
-						<v-list-item block dense clickable class="module-row enabled" @click="editHideNav(element.id)">
-							<v-icon class="drag-handle" name="drag_handle" @click.stop />
-							<v-icon class="icon" name="view_sidebar" />
-							<div class="info">
-								<div class="name">Hide navigation</div>
-								<div class="to">{{ hideNavSummary(element) }}</div>
-							</div>
-							<div class="row-actions" @click.stop>
-								<v-button icon x-small secondary @click="editHideNav(element.id)">
-									<v-icon name="edit" />
-								</v-button>
-								<v-button icon x-small secondary @click="removeHideNav(element.id)">
-									<v-icon name="close" />
-								</v-button>
-							</div>
-						</v-list-item>
-					</template>
-				</draggable>
-
-				<v-button class="add-link" @click="editHideNav('+')">Add Hide-Navigation Rule</v-button>
 			</template>
 		</div>
 
@@ -289,68 +252,6 @@
 				</v-button>
 			</div>
 		</v-drawer>
-
-		<v-drawer
-			:model-value="hideNavEditing !== null"
-			title="Hide Module Navigation"
-			icon="view_sidebar"
-			@update:model-value="onHideNavDrawerToggle"
-			@cancel="closeHideNavEditor"
-		>
-			<template #actions>
-				<v-button
-					v-tooltip.bottom="'Apply'"
-					:disabled="hideNavSaveDisabled"
-					icon
-					rounded
-					@click="saveHideNav"
-				>
-					<v-icon name="check" />
-				</v-button>
-			</template>
-
-			<div v-if="hideNavDraft" class="drawer-content">
-				<p class="hint">
-					Select modules whose middle navigation panel should be hidden. Empty roles and policies = catch-all.
-				</p>
-
-				<div class="field">
-					<label>Modules</label>
-					<v-select
-						v-model="hideNavDraft.modules"
-						multiple
-						:items="moduleSelectOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select modules"
-					/>
-				</div>
-
-				<div class="field">
-					<label>Roles</label>
-					<v-select
-						v-model="hideNavDraft.roles"
-						multiple
-						:items="roleOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select roles (optional)"
-					/>
-				</div>
-
-				<div class="field">
-					<label>Policies</label>
-					<v-select
-						v-model="hideNavDraft.policies"
-						multiple
-						:items="policyOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select policies (optional)"
-					/>
-				</div>
-			</div>
-		</v-drawer>
 	</private-view>
 </template>
 
@@ -374,15 +275,9 @@ const {
 	usersRoleEditingId,
 	usersRoleDraft,
 	usersRoleSaveDisabled,
-	hideNavItems,
-	hideNavEditing,
-	hideNavDraft,
-	hideNavSaveDisabled,
-	moduleSelectOptions,
 	usersOwnRoleSummary,
 	hasUsersRoleRule,
 	usersRoleRuleSummary,
-	hideNavSummary,
 	editUsersOwnRole,
 	closeUsersOwnRoleEditor,
 	onUsersOwnRoleDrawerToggle,
@@ -394,11 +289,6 @@ const {
 	saveUsersRoleRule,
 	clearUsersRoleRule,
 	removeUsersRoleRule,
-	editHideNav,
-	closeHideNavEditor,
-	onHideNavDrawerToggle,
-	saveHideNav,
-	removeHideNav,
 	ensureLoaded,
 	save,
 } = useModulePermissions();

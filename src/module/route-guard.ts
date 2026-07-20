@@ -4,6 +4,7 @@ import {
 	extractModuleIdFromPath,
 	extractUsersRoleFromPath,
 	getBlockedModuleIds,
+	isPathBlocked,
 	normalizeAppPath,
 	normalizeConfig,
 } from '../shared/evaluate';
@@ -46,6 +47,34 @@ function isAdminUser(pinia: any): boolean {
 function getConfig(pinia: any): ModulePermissionsConfig {
 	const settingsStore = getStoreState(pinia, 'settingsStore');
 	return normalizeConfig(settingsStore?.settings?.[MODULE_PERMISSIONS_FIELD]);
+}
+
+function clearHomeOnceFlag(): void {
+	try {
+		if (typeof sessionStorage !== 'undefined') {
+			sessionStorage.removeItem(HOME_ONCE_KEY);
+		}
+	} catch {
+		// ignore
+	}
+}
+
+function hasHomeOnceFlag(): boolean {
+	try {
+		return typeof sessionStorage !== 'undefined' && sessionStorage.getItem(HOME_ONCE_KEY) === '1';
+	} catch {
+		return false;
+	}
+}
+
+function markHomeOnceApplied(): void {
+	try {
+		if (typeof sessionStorage !== 'undefined') {
+			sessionStorage.setItem(HOME_ONCE_KEY, '1');
+		}
+	} catch {
+		// ignore
+	}
 }
 
 function getBlockedIds(pinia: any): Set<string> {
@@ -153,6 +182,11 @@ function isDefaultLandingPath(path: string): boolean {
 	return normalized === '/' || normalized === '/content';
 }
 
+function isLoginPath(path: string): boolean {
+	const normalized = normalizeAppPath(path) || '';
+	return normalized === '/login' || normalized.startsWith('/login/');
+}
+
 function tryApplyHomeOnce(
 	to: { path: string; query?: Record<string, unknown> },
 	pinia: any,
@@ -160,13 +194,7 @@ function tryApplyHomeOnce(
 	blockedCollections: Set<string>,
 	next: (arg?: string | false | void) => void,
 ): boolean {
-	try {
-		if (typeof sessionStorage !== 'undefined' && sessionStorage.getItem(HOME_ONCE_KEY)) {
-			return false;
-		}
-	} catch {
-		// ignore
-	}
+	if (hasHomeOnceFlag()) return false;
 
 	if (isAdminUser(pinia)) return false;
 
@@ -174,37 +202,23 @@ function tryApplyHomeOnce(
 	const user = userStore?.currentUser;
 	if (!user) return false;
 
-	// Explicit login/deep-link redirect wins over start page (including force).
-	if (hasExplicitRedirectQuery(to)) {
-		try {
-			sessionStorage.setItem(HOME_ONCE_KEY, '1');
-		} catch {
-			// ignore
-		}
-		return false;
-	}
-
-	const markApplied = () => {
-		try {
-			sessionStorage.setItem(HOME_ONCE_KEY, '1');
-		} catch {
-			// ignore
-		}
-	};
-
 	const home = getHomePath(pinia);
 	const force = getHomeForce(pinia);
 	const lastPage = normalizeAppPath(user.last_page);
 	const current = normalizeAppPath(to.path);
 
-	if (!home) {
-		markApplied();
+	// Settings may not be hydrated yet — retry on a later navigation.
+	if (!home) return false;
+
+	// Explicit ?redirect= on the destination still wins (including over force).
+	if (hasExplicitRedirectQuery(to)) {
+		markHomeOnceApplied();
 		return false;
 	}
 
 	if (!force) {
 		if (lastPage) {
-			markApplied();
+			markHomeOnceApplied();
 			return false;
 		}
 
@@ -213,16 +227,25 @@ function tryApplyHomeOnce(
 		}
 	}
 
-	markApplied();
+	const target = home;
+	if (!target || target === current) {
+		markHomeOnceApplied();
+		return false;
+	}
 
-	const safe = findSafeRedirect(pinia, blocked, blockedCollections, to.path);
-	const homeIsSafe = normalizeAppPath(home) === normalizeAppPath(safe) || safe === home;
+	// Don't send users to a start page that is itself blocked.
+	if (isPathBlocked(target, blocked)) {
+		markHomeOnceApplied();
+		return false;
+	}
 
-	if (!homeIsSafe) return false;
+	const contentCollection = extractContentCollectionFromPath(target);
+	if (contentCollection && blockedCollections.has(contentCollection)) {
+		markHomeOnceApplied();
+		return false;
+	}
 
-	const target = normalizeAppPath(home);
-	if (!target || target === current) return false;
-
+	markHomeOnceApplied();
 	next(target);
 	return true;
 }
@@ -288,7 +311,23 @@ export function installRouteGuard(): void {
 
 		router.beforeEach((to: { path: string; query?: Record<string, unknown> }, _from: unknown, next: (arg?: string | false | void) => void) => {
 			try {
+				// Logout / login screen: allow a fresh start-page attempt on next auth session.
+				if (isLoginPath(to.path)) {
+					clearHomeOnceFlag();
+					redirectDepth.value = 0;
+					next();
+					return;
+				}
+
 				if (isAdminUser(pinia)) {
+					redirectDepth.value = 0;
+					next();
+					return;
+				}
+
+				const userStore = getStoreState(pinia, 'userStore');
+				if (!userStore?.currentUser) {
+					clearHomeOnceFlag();
 					redirectDepth.value = 0;
 					next();
 					return;

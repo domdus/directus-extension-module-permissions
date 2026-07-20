@@ -1,6 +1,6 @@
 # Module Permissions
 
-Control what non-admin users see in the Directus Data Studio — the left module bar, Content navigation, Users role tree, right sidebar, and where they land after login — based on their roles and policies.
+Control what non-admin users see in the Directus Data Studio — the left module bar, middle Module Navigation, Content nav, Users role tree, right sidebar, and where they land after login — based on their roles and policies.
 
 ## Overview
 
@@ -14,7 +14,7 @@ Open **Module Permissions** from the left bar (admins only). Rules only affect *
 
 ### Modules
 
-Reorder the left module bar, enable or disable entries, add custom links, and hide or show modules for selected roles and policies. Optionally block deep links when a module is hidden.
+Reorder the left module bar, enable or disable entries, add custom links, and hide or show modules for selected roles and policies. Optionally block deep links when a module is hidden. Also hide the middle Module Navigation panel per module for matched roles/policies.
 
 <img alt="Modules settings" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_modules.png" width="800" />
 
@@ -22,6 +22,7 @@ Reorder the left module bar, enable or disable entries, add custom links, and hi
 - **Add custom links** to the module bar
 - **Hide** a module for selected roles/policies, or **show it only** to those roles/policies
 - Optionally **block deep links** when a module is hidden (e.g. typing `/users` in the address bar)
+- **Hide Module Navigation** — hide the middle navigation column for selected modules when the user matches
 
 ### Sidebar
 
@@ -45,14 +46,13 @@ Hide collections from the Content navigation while keeping normal permissions fo
 
 ### Users
 
-Control the Users module’s role tree and optionally hide the middle Module Navigation panel for selected modules.
+Control which roles appear in the Users module’s navigation tree.
 
 <img alt="Users settings" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_users.png" width="800" />
 
 - **Own Role Only** — matched users only see their own role (and parent roles) in the Users navigation tree
-- **Role visibility** — hide or show specific roles in that tree
+- **Role Visibility** — hide or show specific roles in that tree
 - Optionally **block deep links** to hidden role pages
-- **Hide Module Navigation** — hide the middle navigation column for chosen modules (e.g. Users)
 
 ### Start Page
 

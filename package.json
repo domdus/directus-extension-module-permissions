@@ -1,6 +1,6 @@
 {
 	"name": "directus-extension-module-permissions",
-	"description": "Per-role/policy UI controls for the module bar, Content nav, Users role tree, Sidebar, and Start Page — with optional deep-link blocking",
+	"description": "Per-role/policy UI controls for the module bar, Module Navigation, Content nav, Users role tree, Sidebar, and Start Page — with optional deep-link blocking",
 	"icon": "security",
 	"version": "1.0.0",
 	"license": "MIT",
