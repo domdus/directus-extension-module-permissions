@@ -1,6 +1,6 @@
 {
 	"name": "directus-extension-module-permissions",
-	"description": "Per-role/policy UI controls for the module bar, Module Navigation, Content nav, Users role tree, Sidebar, and Start Page — with optional deep-link blocking",
+	"description": "Control Studio UI visibility for the module bar, Module Navigation, Content nav, Users role tree, Sidebar, and Start Page by role and policy",
 	"icon": "security",
 	"version": "1.0.0",
 	"license": "MIT",
@@ -20,8 +20,18 @@
 	],
 	"type": "module",
 	"files": [
-		"dist"
+		"dist",
+		"LICENSE",
+		"README.md"
 	],
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/domdus/directus-extension-module-permissions.git"
+	},
+	"bugs": {
+		"url": "https://github.com/domdus/directus-extension-module-permissions/issues"
+	},
+	"homepage": "https://github.com/domdus/directus-extension-module-permissions#readme",
 	"directus:extension": {
 		"type": "bundle",
 		"path": {
@@ -52,9 +62,7 @@
 		"@directus/extensions-sdk": "^17.0.0",
 		"@directus/types": "^13.0.0",
 		"typescript": "^5.0.0",
-		"vue": "^3.3.7"
-	},
-	"dependencies": {
+		"vue": "^3.3.7",
 		"vuedraggable": "^4.1.0"
 	}
 }

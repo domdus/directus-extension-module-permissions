@@ -83,6 +83,20 @@ Some lists (Start Page, Sidebar mode, Own Role Only, Hide Module Navigation) sup
 
 ## Installation
 
+Requires **Directus 11 or 12**.
+
+### npm
+
+```bash
+npm install directus-extension-module-permissions
+```
+
+Place the package in your Directus `extensions` folder (or install into a project that loads extensions from `node_modules`), then restart Directus.
+
+### Marketplace
+
+Search for **Module Permissions** in **Settings → Marketplace**. This bundle includes an API hook, so some environments only allow App extensions from the Marketplace — use the npm/manual install below if install is blocked.
+
 ### Manual Installation
 
 1. Install and build:
@@ -102,8 +116,6 @@ npm run build
    1. Open **Settings → Project Settings → Modules**
    2. Enable **Module Permissions**
    3. Open **Module Permissions** from the left bar
-
-Requires **Directus 11 or 12**.
 
 ## Getting started
 
