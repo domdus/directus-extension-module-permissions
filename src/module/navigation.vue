@@ -63,6 +63,7 @@
 </script>
 
 <style scoped>
+/* Left-rail mirror of view_sidebar — only on this icon, never :deep() (that flipped Sidebar too). */
 .icon-flip-x {
 	transform: scaleX(-1);
 }

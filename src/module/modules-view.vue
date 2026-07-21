@@ -360,12 +360,6 @@ onMounted(() => {
 	padding-block-start: 0;
 }
 
-/* Mirror sidebar icon → left rail (module bar), matching the Modules nav item */
-:deep(i[data-icon='view_sidebar']) {
-	display: inline-block;
-	transform: scaleX(-1);
-}
-
 .loading {
 	display: flex;
 	justify-content: center;
