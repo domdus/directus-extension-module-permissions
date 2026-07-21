@@ -132,6 +132,20 @@ npm run build
 - Export your config before major changes or before uninstalling.
 - Uninstall cleanup only removes this extension’s data — your normal module bar and other project settings stay intact.
 
+## Examples
+
+<img alt="Insights with modules and navigation hidden" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_clean_insights.png" width="800" />
+
+A focused Insights view: other modules are hidden from the left bar, and the middle Module Navigation column is removed, so the user only sees the dashboard.
+
+<img alt="Content item edit with sidebar hidden" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_collection_no_sidebar.png" width="800" />
+
+Editing a Content item with the right sidebar fully hidden — no collapsed rail and no detail panels — so the form uses the full width.
+
+<img alt="User Directory without roles navigation" src="https://raw.githubusercontent.com/domdus/directus-extension-module-permissions/main/docs/screenshot_user_no_roles_module.png" width="800" />
+
+User Directory for a restricted role: the Users module and its roles tree are not shown in navigation, leaving a simple user detail form without the usual Users chrome.
+
 ## License
 
 MIT

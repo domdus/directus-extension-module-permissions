@@ -105,6 +105,10 @@ function buildChromeCss(mode: SidebarChromeMode): string {
 
 	// On Directus 11.17+ / 12 the sidebar sits in `.main-split` → `.sp-end`.
 	// Hiding `#sidebar` alone leaves the end grid track (~30%+) reserved.
+	//
+	// On Directus ≤11.13 (incl. 11.7.x) the sidebar is fixed/overlay: between
+	// 960–1260px `#main-content` keeps `margin-right: 60px` for the collapsed
+	// peek rail, and at ≥1260px `#sidebar` uses `flex-basis: 60px` when closed.
 	return `
 html.${HIDDEN_CLASS} #sidebar,
 html.${HIDDEN_CLASS} #sidebar-desktop-outlet,
@@ -116,15 +120,25 @@ html.${HIDDEN_CLASS} .sp-divider[${CHROME_ATTR}] {
 	min-width: 0 !important;
 	max-width: 0 !important;
 	inline-size: 0 !important;
+	flex-basis: 0 !important;
+	flex-grow: 0 !important;
+	flex-shrink: 0 !important;
 	overflow: hidden !important;
 	pointer-events: none !important;
 	border: none !important;
+	transform: none !important;
 }
 
 html.${HIDDEN_CLASS} .main-split:has(.sp-end[${CHROME_ATTR}]),
 html.${HIDDEN_CLASS} .main-split:has(#sidebar),
 html.${HIDDEN_CLASS} .main-split:has(#sidebar-desktop-outlet) {
 	grid-template-columns: minmax(0, 1fr) 0px 0px !important;
+}
+
+/* Clear the collapsed-rail content offset (Directus ≤11.13 / 11.7.x). */
+html.${HIDDEN_CLASS} .private-view #main-content,
+html.${HIDDEN_CLASS} #main-content {
+	margin-right: 0 !important;
 }
 
 html.${HIDDEN_CLASS} .sidebar-button,
