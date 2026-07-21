@@ -350,14 +350,13 @@ onMounted(() => {
 
 <style scoped>
 .page {
-	padding-inline: var(--content-padding);
-	padding-block-start: 0;
+	padding: var(--content-padding);
 	padding-block-end: var(--content-padding-bottom);
 	max-width: 720px;
 }
 
-.page--padded-top {
-	padding-block-start: var(--content-padding);
+.page--flush-top {
+	padding-block-start: 0;
 }
 
 /* Mirror sidebar icon → left rail (module bar), matching the Modules nav item */

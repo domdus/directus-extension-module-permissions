@@ -48,6 +48,7 @@ export type SidebarPanelId =
 	| 'archive'
 	| 'refresh'
 	| 'export'
+	| 'import'
 	| 'revisions'
 	| 'comments'
 	| 'shares'
@@ -191,12 +192,13 @@ export const SIDEBAR_PANEL_CATALOG: Array<{
 	id: SidebarPanelId;
 	name: string;
 	icon: string;
-	context: 'collection' | 'item' | 'both';
+	context: 'collection' | 'item' | 'both' | 'insights';
 }> = [
 	{ id: 'layout', name: 'Layout Options', icon: 'layers', context: 'collection' },
 	{ id: 'archive', name: 'Archive', icon: 'archive', context: 'collection' },
 	{ id: 'refresh', name: 'Auto Refresh', icon: 'sync', context: 'collection' },
 	{ id: 'export', name: 'Import / Export', icon: 'import_export', context: 'collection' },
+	{ id: 'import', name: 'Import', icon: 'publish', context: 'insights' },
 	{ id: 'revisions', name: 'Revisions', icon: 'change_history', context: 'item' },
 	{ id: 'comments', name: 'Comments', icon: 'chat_bubble_outline', context: 'item' },
 	{ id: 'shares', name: 'Shares', icon: 'share', context: 'item' },

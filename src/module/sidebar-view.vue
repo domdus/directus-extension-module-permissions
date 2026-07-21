@@ -41,8 +41,8 @@
 				<p class="page-intro">
 					Hide or show known Data Studio sidebar panels for matched roles/policies. Collection browse panels
 					(Layout, Archive, …) and item panels (Revisions, Comments, …) only appear on the relevant pages.
-					Activity Log is the footer control at the bottom of the sidebar (Directus 11; replaced by AI Assistant
-					on newer versions when AI is enabled).
+					Import appears on Insights. Activity Log is the footer control at the bottom of the sidebar
+					(Directus 11; replaced by AI Assistant on newer versions when AI is enabled).
 				</p>
 
 				<div class="list">
@@ -85,7 +85,7 @@
 					:style="{ '--v-divider-color': 'var(--theme--border-color-subdued)' }"
 				>
 					<template #icon><v-icon name="keyboard_tab" /></template>
-					Sidebar mode
+					Sidebar Mode
 				</v-divider>
 				<p class="page-intro">
 					Force the whole right sidebar collapsed or hidden. First match wins (drag to reorder); leave roles
@@ -273,9 +273,10 @@ const {
 	save,
 } = useModulePermissions();
 
-function contextLabel(context: 'collection' | 'item' | 'both'): string {
+function contextLabel(context: 'collection' | 'item' | 'both' | 'insights'): string {
 	if (context === 'collection') return 'collection browse';
 	if (context === 'item') return 'item detail';
+	if (context === 'insights') return 'Insights';
 	return 'collection & item';
 }
 
@@ -286,14 +287,13 @@ onMounted(() => {
 
 <style scoped>
 .page {
-	padding-inline: var(--content-padding);
-	padding-block-start: 0;
+	padding: var(--content-padding);
 	padding-block-end: var(--content-padding-bottom);
 	max-width: 720px;
 }
 
-.page--padded-top {
-	padding-block-start: var(--content-padding);
+.page--flush-top {
+	padding-block-start: 0;
 }
 
 .loading {
