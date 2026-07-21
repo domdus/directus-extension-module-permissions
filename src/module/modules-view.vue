@@ -184,7 +184,8 @@
 
 			<div v-if="ruleDraft" class="drawer-content">
 				<p class="hint">
-					Leave roles and policies empty to use only the global enable toggle (no ACL override).
+					Leave roles and policies empty to remove this visibility rule. The module then follows only its
+					global enable toggle in the list above.
 				</p>
 
 				<div class="field">

@@ -54,21 +54,19 @@ function ensureStyleEl(): HTMLStyleElement {
 }
 
 function buildChromeCss(): string {
-	// Hide only elements we explicitly mark with NAV_PANEL_ATTR.
-	// Do not restyle `.module-bar` — overriding its width to `auto` makes the
-	// icon buttons flow horizontally inside a wide rail.
+	// Hide only the Module Navigation chrome we mark — never the left module icon bar.
 	//
-	// On Directus 11.17+ / 12 the middle nav sits in a SplitPanel (`.sp-start`).
-	// `display:none` on the aside alone leaves the grid track reserved — also
-	// zero the root's `grid-template-columns` while the start pane is marked.
+	// Important (Directus 11.14+ / 12 SplitPanel): do NOT `display:none` the
+	// `.sp-start` / `.sp-divider` grid items. Removing them from the grid while
+	// `grid-template-columns` still has 3 tracks mis-assigns columns and can
+	// blank `#main-content` (seen on Insights). Zero the root track instead and
+	// only hide the aside / nav content inside the start pane.
 	return `
 aside[${NAV_PANEL_ATTR}],
 #module-navigation[${NAV_PANEL_ATTR}],
 .module-nav[${NAV_PANEL_ATTR}],
 .mobile-nav[${NAV_PANEL_ATTR}],
-.resize-wrapper[${NAV_PANEL_ATTR}],
-.sp-start[${NAV_PANEL_ATTR}],
-.sp-divider[${NAV_PANEL_ATTR}] {
+.resize-wrapper[${NAV_PANEL_ATTR}] {
 	display: none !important;
 	width: 0 !important;
 	min-width: 0 !important;
@@ -82,11 +80,34 @@ aside[${NAV_PANEL_ATTR}],
 	border: none !important;
 }
 
-/* Free the SplitPanel start track (11.17+ / 12). Scoped --*-gridTemplate alone
-   still reserves space; override the resolved grid template. */
-.root-split:has(.sp-start[${NAV_PANEL_ATTR}]),
-.root-split:has(.sp-start [${NAV_PANEL_ATTR}]) {
+/* Collapse SplitPanel start track without removing grid items (11.14+ / 12). */
+.sp-start[${NAV_PANEL_ATTR}],
+.sp-divider[${NAV_PANEL_ATTR}] {
+	width: 0 !important;
+	min-width: 0 !important;
+	max-width: 0 !important;
+	inline-size: 0 !important;
+	min-inline-size: 0 !important;
+	max-inline-size: 0 !important;
+	overflow: hidden !important;
+	pointer-events: none !important;
+	border: none !important;
+	opacity: 0 !important;
+}
+
+.root-split:has(> .sp-start[${NAV_PANEL_ATTR}]),
+.root-split:has(> .sp-start > [${NAV_PANEL_ATTR}]),
+.root-split:has(> .sp-start [${NAV_PANEL_ATTR}]) {
 	grid-template-columns: 0px 0px minmax(0, 1fr) !important;
+}
+
+/* Header / project-info controls that reopen Module Navigation. */
+html.${HIDDEN_NAV_CLASS} .header-bar .nav-toggle,
+html.${HIDDEN_NAV_CLASS} .header-bar .nav-toggle-separator,
+html.${HIDDEN_NAV_CLASS} .project-info .nav-toggle,
+html.${HIDDEN_NAV_CLASS} button.nav-toggle,
+html.${HIDDEN_NAV_CLASS} .v-button.nav-toggle {
+	display: none !important;
 }
 `.trim();
 }
@@ -201,6 +222,22 @@ function restoreModuleNavSplit(pinia: any) {
 	}
 }
 
+/** Direct child start pane of the outer `.root-split` that hosts Module Navigation. */
+function findRootNavStartPane(panel: HTMLElement): HTMLElement | null {
+	const start = panel.closest('.sp-start');
+	if (!(start instanceof HTMLElement)) return null;
+	if (!start.querySelector('aside.module-nav, #module-navigation, .module-nav')) return null;
+
+	const root = start.parentElement;
+	// Must be the outer module-nav SplitPanel — never `.main-split` (content + sidebar).
+	if (!(root instanceof HTMLElement)) return null;
+	if (!root.classList.contains('root-split')) return null;
+	if (root.classList.contains('main-split')) return null;
+	if (root.querySelector(':scope > .sp-start') !== start) return null;
+
+	return start;
+}
+
 /**
  * Backup when CSS :has() / store collapse hasn't zeroed the track yet:
  * overwrite SplitPanel's inline `--*-gridTemplate` on the root that hosts module nav.
@@ -210,12 +247,9 @@ function collapseSplitPanelTracks(panels: HTMLElement[]) {
 	const roots = new Set<HTMLElement>();
 
 	for (const panel of panels) {
-		const start = panel.closest('.sp-start');
-		if (!(start instanceof HTMLElement)) continue;
-		if (!start.querySelector('aside.module-nav, #module-navigation, .module-nav')) continue;
-
-		const root = start.closest('.sp-root.root-split, .root-split.sp-root, .root-split') as HTMLElement | null;
-		if (root) roots.add(root);
+		const start = findRootNavStartPane(panel);
+		if (!start?.parentElement) continue;
+		roots.add(start.parentElement);
 	}
 
 	for (const root of roots) {
@@ -234,9 +268,9 @@ function collapseSplitPanelTracks(panels: HTMLElement[]) {
 
 function markSplitPanes(panels: HTMLElement[]) {
 	for (const panel of panels) {
-		const start = panel.closest('.sp-start');
-		if (!(start instanceof HTMLElement)) continue;
-		if (!start.querySelector('aside.module-nav, #module-navigation, .module-nav')) continue;
+		const start = findRootNavStartPane(panel);
+		if (!start) continue;
+
 		start.setAttribute(NAV_PANEL_ATTR, '');
 
 		const divider = start.nextElementSibling;
@@ -265,6 +299,7 @@ function applyModuleNavChrome(pinia: any, currentPath: string) {
 		panel.setAttribute(NAV_PANEL_ATTR, '');
 	}
 	markSplitPanes(panels);
+	document.documentElement.classList.add(HIDDEN_NAV_CLASS);
 	collapseModuleNavSplit(pinia);
 	collapseSplitPanelTracks(panels);
 }
