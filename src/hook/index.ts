@@ -52,39 +52,55 @@ async function resolveUserAccessContext(
 		}
 	}
 
-	for (const startRole of [...roleIds]) {
-		let current: string | null = startRole;
+	// Nested roles (`parent`) exist on Directus 11+ only.
+	try {
+		const hasParent = await database.schema.hasColumn('directus_roles', 'parent');
+		if (hasParent) {
+			for (const startRole of [...roleIds]) {
+				let current: string | null = startRole;
 
-		for (let depth = 0; depth < 25 && current; depth++) {
-			const row = await database('directus_roles').select('parent').where({ id: current }).first();
-			if (!row?.parent) break;
-			const parentId = String(row.parent);
-			if (roleIds.has(parentId)) break;
-			roleIds.add(parentId);
-			current = parentId;
+				for (let depth = 0; depth < 25 && current; depth++) {
+					const row = await database('directus_roles').select('parent').where({ id: current }).first();
+					if (!row?.parent) break;
+					const parentId = String(row.parent);
+					if (roleIds.has(parentId)) break;
+					roleIds.add(parentId);
+					current = parentId;
+				}
+			}
 		}
+	} catch {
+		// ignore — role-only matching still works
 	}
 
-	const query = database('directus_access').select('policy');
+	// Policies / directus_access exist on Directus 11+ only.
+	try {
+		const hasAccess = await database.schema.hasTable('directus_access');
+		if (hasAccess) {
+			const query = database('directus_access').select('policy');
 
-	query.where((qb: any) => {
-		let hasClause = false;
+			query.where((qb: any) => {
+				let hasClause = false;
 
-		if (accountability.user) {
-			qb.where({ user: accountability.user });
-			hasClause = true;
+				if (accountability.user) {
+					qb.where({ user: accountability.user });
+					hasClause = true;
+				}
+
+				if (roleIds.size > 0) {
+					if (hasClause) qb.orWhereIn('role', [...roleIds]);
+					else qb.whereIn('role', [...roleIds]);
+				}
+			});
+
+			const accessRows = await query;
+
+			for (const row of accessRows || []) {
+				if (row?.policy) policyIds.add(String(row.policy));
+			}
 		}
-
-		if (roleIds.size > 0) {
-			if (hasClause) qb.orWhereIn('role', [...roleIds]);
-			else qb.whereIn('role', [...roleIds]);
-		}
-	});
-
-	const accessRows = await query;
-
-	for (const row of accessRows || []) {
-		if (row?.policy) policyIds.add(String(row.policy));
+	} catch {
+		// ignore — match on roles only
 	}
 
 	return {

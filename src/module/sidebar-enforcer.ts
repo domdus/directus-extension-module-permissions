@@ -1,4 +1,5 @@
 import { normalizeConfig } from '../shared/evaluate';
+import { userHasAdminAccess } from '../shared/admin';
 import {
 	MODULE_PERMISSIONS_FIELD,
 	SIDEBAR_PANEL_CATALOG,
@@ -10,6 +11,8 @@ const ENFORCER_FLAG = '__modulePermissionsSidebarEnforcerInstalled';
 const STYLE_ID = 'mp-sidebar-enforcer-styles';
 const HIDDEN_CLASS = 'mp-sidebar-hidden';
 const PANEL_ATTR = 'data-mp-sidebar-panel-hidden';
+/** Marked on SplitPanel end/divider when force-hiding the whole sidebar chrome. */
+const CHROME_ATTR = 'data-mp-sidebar-chrome-hidden';
 
 const PANEL_ICON_BY_ID = new Map(SIDEBAR_PANEL_CATALOG.map((panel) => [panel.id, panel.icon]));
 
@@ -22,6 +25,7 @@ type LooseStore = {
 	} | null;
 	collapsed?: boolean;
 	collapse?: () => void;
+	expand?: () => void;
 	sidebarOpen?: boolean;
 };
 
@@ -40,7 +44,7 @@ function getStoreState(pinia: any, id: string): LooseStore | null {
 
 function isAdminUser(pinia: any): boolean {
 	const userStore = getStoreState(pinia, 'userStore');
-	return userStore?.currentUser?.admin_access === true;
+	return userHasAdminAccess(userStore?.currentUser);
 }
 
 function getConfig(pinia: any): ModulePermissionsConfig {
@@ -99,14 +103,30 @@ function buildPanelCss(panelIds: string[]): string {
 function buildChromeCss(mode: SidebarChromeMode): string {
 	if (mode !== 'hidden') return '';
 
+	// On Directus 11.17+ / 12 the sidebar sits in `.main-split` → `.sp-end`.
+	// Hiding `#sidebar` alone leaves the end grid track (~30%+) reserved.
 	return `
-html.${HIDDEN_CLASS} #sidebar {
+html.${HIDDEN_CLASS} #sidebar,
+html.${HIDDEN_CLASS} #sidebar-desktop-outlet,
+html.${HIDDEN_CLASS} .sidebar-outlet:has(#sidebar),
+html.${HIDDEN_CLASS} .sp-end[${CHROME_ATTR}],
+html.${HIDDEN_CLASS} .sp-divider[${CHROME_ATTR}] {
 	display: none !important;
 	width: 0 !important;
 	min-width: 0 !important;
+	max-width: 0 !important;
+	inline-size: 0 !important;
 	overflow: hidden !important;
 	pointer-events: none !important;
+	border: none !important;
 }
+
+html.${HIDDEN_CLASS} .main-split:has(.sp-end[${CHROME_ATTR}]),
+html.${HIDDEN_CLASS} .main-split:has(#sidebar),
+html.${HIDDEN_CLASS} .main-split:has(#sidebar-desktop-outlet) {
+	grid-template-columns: minmax(0, 1fr) 0px 0px !important;
+}
+
 html.${HIDDEN_CLASS} .sidebar-button,
 html.${HIDDEN_CLASS} button.sidebar-toggle,
 html.${HIDDEN_CLASS} .header-bar .sidebar-toggle,
@@ -114,6 +134,51 @@ html.${HIDDEN_CLASS} [data-sidebar-toggle] {
 	display: none !important;
 }
 `.trim();
+}
+
+function clearChromeMarks() {
+	document.querySelectorAll(`[${CHROME_ATTR}]`).forEach((node) => {
+		node.removeAttribute(CHROME_ATTR);
+	});
+}
+
+function markSidebarSplitPanes() {
+	clearChromeMarks();
+
+	const sidebar =
+		document.querySelector('#sidebar') ||
+		document.querySelector('#sidebar-desktop-outlet') ||
+		document.querySelector('.sidebar-outlet:has(#sidebar)');
+
+	if (!(sidebar instanceof HTMLElement)) return;
+
+	const end = sidebar.closest('.sp-end');
+	if (!(end instanceof HTMLElement)) return;
+
+	end.setAttribute(CHROME_ATTR, '');
+
+	const divider = end.previousElementSibling;
+	if (divider instanceof HTMLElement && divider.classList.contains('sp-divider')) {
+		divider.setAttribute(CHROME_ATTR, '');
+	}
+}
+
+function forceSidebarCollapsed(pinia: any) {
+	const sidebarStore = getStoreState(pinia, 'sidebar-store');
+	try {
+		sidebarStore?.collapse?.();
+	} catch {
+		// ignore
+	}
+
+	const appStore = getStoreState(pinia, 'appStore');
+	try {
+		if (appStore && 'sidebarOpen' in appStore) {
+			appStore.sidebarOpen = false;
+		}
+	} catch {
+		// ignore
+	}
 }
 
 function markHidden(node: Element | null | undefined, id: string) {
@@ -235,28 +300,16 @@ function applyChrome(pinia: any, mode: SidebarChromeMode) {
 
 	if (mode === 'hidden') {
 		root.classList.add(HIDDEN_CLASS);
+		markSidebarSplitPanes();
+		forceSidebarCollapsed(pinia);
 		return;
 	}
 
 	root.classList.remove(HIDDEN_CLASS);
+	clearChromeMarks();
 
 	if (mode === 'collapsed') {
-		const sidebarStore = getStoreState(pinia, 'sidebar-store');
-		try {
-			sidebarStore?.collapse?.();
-		} catch {
-			// ignore
-		}
-
-		// Directus ≤11.x uses appStore.sidebarOpen
-		const appStore = getStoreState(pinia, 'appStore');
-		try {
-			if (appStore && 'sidebarOpen' in appStore) {
-				appStore.sidebarOpen = false;
-			}
-		} catch {
-			// ignore
-		}
+		forceSidebarCollapsed(pinia);
 	}
 }
 
@@ -264,6 +317,7 @@ function applyEnforcement(pinia: any) {
 	if (isAdminUser(pinia)) {
 		ensureStyleEl().textContent = '';
 		document.documentElement.classList.remove(HIDDEN_CLASS);
+		clearChromeMarks();
 		document.querySelectorAll(`[${PANEL_ATTR}]`).forEach((node) => {
 			node.removeAttribute(PANEL_ATTR);
 			(node as HTMLElement).style.removeProperty('display');
@@ -337,20 +391,16 @@ export function installSidebarEnforcer(): void {
 		observeRoot();
 		window.setInterval(observeRoot, 5000);
 
-		// Keep force-collapsed sticky if the user tries to expand
+		// Keep force-collapsed / force-hidden sticky if the user tries to expand
 		window.setInterval(() => {
 			try {
 				if (isAdminUser(pinia)) return;
-				if (getSidebarMode(pinia) !== 'collapsed') return;
-
-				const sidebarStore = getStoreState(pinia, 'sidebar-store');
-				if (sidebarStore && sidebarStore.collapsed === false) {
-					sidebarStore.collapse?.();
+				const mode = getSidebarMode(pinia);
+				if (mode === 'collapsed' || mode === 'hidden') {
+					forceSidebarCollapsed(pinia);
 				}
-
-				const appStore = getStoreState(pinia, 'appStore');
-				if (appStore && appStore.sidebarOpen === true) {
-					appStore.sidebarOpen = false;
+				if (mode === 'hidden') {
+					markSidebarSplitPanes();
 				}
 			} catch {
 				// ignore

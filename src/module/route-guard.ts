@@ -8,6 +8,7 @@ import {
 	normalizeAppPath,
 	normalizeConfig,
 } from '../shared/evaluate';
+import { userHasAdminAccess } from '../shared/admin';
 import { MODULE_PERMISSIONS_FIELD, type ModuleBarItem, type ModulePermissionsConfig } from '../shared/types';
 
 const GUARD_FLAG = '__modulePermissionsRouteGuardInstalled';
@@ -41,7 +42,7 @@ function getStoreState(pinia: any, id: string): LooseStore | null {
 
 function isAdminUser(pinia: any): boolean {
 	const userStore = getStoreState(pinia, 'userStore');
-	return userStore?.currentUser?.admin_access === true;
+	return userHasAdminAccess(userStore?.currentUser);
 }
 
 function getConfig(pinia: any): ModulePermissionsConfig {

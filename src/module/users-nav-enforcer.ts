@@ -1,4 +1,5 @@
 import { normalizeConfig, extractModuleIdFromPath } from '../shared/evaluate';
+import { userHasAdminAccess } from '../shared/admin';
 import { MODULE_PERMISSIONS_FIELD, type ModulePermissionsConfig } from '../shared/types';
 
 const ENFORCER_FLAG = '__modulePermissionsUsersNavEnforcerInstalled';
@@ -35,7 +36,7 @@ function getStoreState(pinia: any, id: string): LooseStore | null {
 
 function isAdminUser(pinia: any): boolean {
 	const userStore = getStoreState(pinia, 'userStore');
-	return userStore?.currentUser?.admin_access === true;
+	return userHasAdminAccess(userStore?.currentUser);
 }
 
 function getConfig(pinia: any): ModulePermissionsConfig {
@@ -56,16 +57,36 @@ function buildChromeCss(): string {
 	// Hide only elements we explicitly mark with NAV_PANEL_ATTR.
 	// Do not restyle `.module-bar` — overriding its width to `auto` makes the
 	// icon buttons flow horizontally inside a wide rail.
+	//
+	// On Directus 11.17+ / 12 the middle nav sits in a SplitPanel (`.sp-start`).
+	// `display:none` on the aside alone leaves the grid track reserved — also
+	// zero the root's `grid-template-columns` while the start pane is marked.
 	return `
-[${NAV_PANEL_ATTR}] {
+aside[${NAV_PANEL_ATTR}],
+#module-navigation[${NAV_PANEL_ATTR}],
+.module-nav[${NAV_PANEL_ATTR}],
+.mobile-nav[${NAV_PANEL_ATTR}],
+.resize-wrapper[${NAV_PANEL_ATTR}],
+.sp-start[${NAV_PANEL_ATTR}],
+.sp-divider[${NAV_PANEL_ATTR}] {
 	display: none !important;
 	width: 0 !important;
 	min-width: 0 !important;
 	max-width: 0 !important;
+	inline-size: 0 !important;
+	min-inline-size: 0 !important;
+	max-inline-size: 0 !important;
 	flex: 0 0 0 !important;
 	overflow: hidden !important;
 	pointer-events: none !important;
 	border: none !important;
+}
+
+/* Free the SplitPanel start track (11.17+ / 12). Scoped --*-gridTemplate alone
+   still reserves space; override the resolved grid template. */
+.root-split:has(.sp-start[${NAV_PANEL_ATTR}]),
+.root-split:has(.sp-start [${NAV_PANEL_ATTR}]) {
+	grid-template-columns: 0px 0px minmax(0, 1fr) !important;
 }
 `.trim();
 }
@@ -117,6 +138,135 @@ function clearModuleNavPanelMarks() {
 	document.querySelectorAll(`[${NAV_PANEL_ATTR}]`).forEach((node) => {
 		node.removeAttribute(NAV_PANEL_ATTR);
 	});
+}
+
+/** True when we collapsed the nav bar solely to hide Module Navigation. */
+let forcedNavBarCollapse = false;
+
+/** Directus 11.17+ / 12: collapse the SplitPanel that hosts Module Navigation. */
+function collapseModuleNavSplit(pinia: any) {
+	try {
+		const navBarStore = getStoreState(pinia, 'nav-bar-store') as LooseStore & {
+			collapsed?: boolean | { value?: boolean };
+			collapse?: () => void;
+			expand?: () => void;
+		} | null;
+
+		if (!navBarStore) return;
+
+		const isCollapsed =
+			typeof navBarStore.collapsed === 'boolean'
+				? navBarStore.collapsed
+				: Boolean((navBarStore.collapsed as { value?: boolean } | undefined)?.value);
+
+		if (!isCollapsed) {
+			if (typeof navBarStore.collapse === 'function') {
+				navBarStore.collapse();
+			} else if ('collapsed' in navBarStore) {
+				(navBarStore as { collapsed: boolean }).collapsed = true;
+			}
+			forcedNavBarCollapse = true;
+			return;
+		}
+
+		// Already collapsed (by us or the user) — keep forcing via store so
+		// expand attempts while the hide-rule is active are undone.
+		if (typeof navBarStore.collapse === 'function') {
+			navBarStore.collapse();
+		}
+	} catch {
+		// ignore
+	}
+}
+
+function restoreModuleNavSplit(pinia: any) {
+	if (!forcedNavBarCollapse) return;
+	forcedNavBarCollapse = false;
+
+	try {
+		const navBarStore = getStoreState(pinia, 'nav-bar-store') as LooseStore & {
+			expand?: () => void;
+			collapsed?: boolean;
+		} | null;
+
+		if (!navBarStore) return;
+
+		if (typeof navBarStore.expand === 'function') {
+			navBarStore.expand();
+		} else if ('collapsed' in navBarStore) {
+			navBarStore.collapsed = false;
+		}
+	} catch {
+		// ignore
+	}
+}
+
+/**
+ * Backup when CSS :has() / store collapse hasn't zeroed the track yet:
+ * overwrite SplitPanel's inline `--*-gridTemplate` on the root that hosts module nav.
+ * Never mark the root with NAV_PANEL_ATTR — that would hide the whole layout.
+ */
+function collapseSplitPanelTracks(panels: HTMLElement[]) {
+	const roots = new Set<HTMLElement>();
+
+	for (const panel of panels) {
+		const start = panel.closest('.sp-start');
+		if (!(start instanceof HTMLElement)) continue;
+		if (!start.querySelector('aside.module-nav, #module-navigation, .module-nav')) continue;
+
+		const root = start.closest('.sp-root.root-split, .root-split.sp-root, .root-split') as HTMLElement | null;
+		if (root) roots.add(root);
+	}
+
+	for (const root of roots) {
+		const props: string[] = [];
+		for (let i = 0; i < root.style.length; i++) {
+			const prop = root.style.item(i);
+			if (prop && (prop.endsWith('gridTemplate') || prop.endsWith('-gridTemplate'))) {
+				props.push(prop);
+			}
+		}
+		for (const prop of props) {
+			root.style.setProperty(prop, '0px 0px minmax(0, 1fr)');
+		}
+	}
+}
+
+function markSplitPanes(panels: HTMLElement[]) {
+	for (const panel of panels) {
+		const start = panel.closest('.sp-start');
+		if (!(start instanceof HTMLElement)) continue;
+		if (!start.querySelector('aside.module-nav, #module-navigation, .module-nav')) continue;
+		start.setAttribute(NAV_PANEL_ATTR, '');
+
+		const divider = start.nextElementSibling;
+		if (divider instanceof HTMLElement && divider.classList.contains('sp-divider')) {
+			divider.setAttribute(NAV_PANEL_ATTR, '');
+		}
+	}
+}
+
+function applyModuleNavChrome(pinia: any, currentPath: string) {
+	const config = getConfig(pinia);
+	const hiddenModules = new Set((config.navigation_hidden_modules || []).map(String));
+	const moduleId = extractModuleIdFromPath(currentPath);
+
+	ensureStyleEl().textContent = buildChromeCss();
+	clearModuleNavPanelMarks();
+
+	const shouldHide = Boolean(moduleId && hiddenModules.has(moduleId));
+	if (!shouldHide) {
+		restoreModuleNavSplit(pinia);
+		return;
+	}
+
+	const panels = findModuleNavPanels();
+	for (const panel of panels) {
+		panel.setAttribute(NAV_PANEL_ATTR, '');
+	}
+	markSplitPanes(panels);
+	collapseModuleNavSplit(pinia);
+	collapseSplitPanelTracks(panels);
 }
 
 function roleIdFromHref(href: string | null): string | null {
@@ -266,25 +416,10 @@ function hideUsersRoleTree(pinia: any, currentPath: string) {
 	}
 }
 
-function applyModuleNavChrome(pinia: any, currentPath: string) {
-	const config = getConfig(pinia);
-	const hiddenModules = new Set((config.navigation_hidden_modules || []).map(String));
-	const moduleId = extractModuleIdFromPath(currentPath);
-
-	ensureStyleEl().textContent = buildChromeCss();
-	clearModuleNavPanelMarks();
-
-	const shouldHide = Boolean(moduleId && hiddenModules.has(moduleId));
-	if (!shouldHide) return;
-
-	for (const panel of findModuleNavPanels()) {
-		panel.setAttribute(NAV_PANEL_ATTR, '');
-	}
-}
-
 function applyEnforcement(pinia: any, currentPath: string) {
 	if (isAdminUser(pinia)) {
 		clearModuleNavPanelMarks();
+		restoreModuleNavSplit(pinia);
 		document.querySelectorAll(`[${ROLE_ATTR}]`).forEach((node) => {
 			node.removeAttribute(ROLE_ATTR);
 			(node as HTMLElement).style.removeProperty('display');

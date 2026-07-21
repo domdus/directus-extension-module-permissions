@@ -8,6 +8,7 @@ import {
 	serializeModuleBar,
 	serializePermissionsConfig,
 } from '../../shared/evaluate';
+import { userHasAdminAccess } from '../../shared/admin';
 import { getModuleMeta } from '../../shared/module-meta';
 import {
 	EMPTY_MODULE_PERMISSIONS,
@@ -953,20 +954,25 @@ export function useModulePermissions() {
 	}
 
 	async function loadRolesAndPolicies() {
-		const [rolesRes, policiesRes] = await Promise.all([
-			api.get('/roles', { params: { limit: -1, fields: ['id', 'name'], sort: 'name' } }),
-			api.get('/policies', { params: { limit: -1, fields: ['id', 'name'], sort: 'name' } }),
-		]);
+		const rolesRes = await api.get('/roles', { params: { limit: -1, fields: ['id', 'name'], sort: 'name' } });
 
 		roleOptions.value = (rolesRes.data?.data || []).map((role: any) => ({
 			text: resolveTranslatedLabel(role.name, t),
 			value: role.id,
 		}));
 
-		policyOptions.value = (policiesRes.data?.data || []).map((policy: any) => ({
-			text: resolveTranslatedLabel(policy.name, t),
-			value: policy.id,
-		}));
+		// Policies exist only on Directus 11+ — keep UI usable with roles alone on v9/v10.
+		try {
+			const policiesRes = await api.get('/policies', {
+				params: { limit: -1, fields: ['id', 'name'], sort: 'name' },
+			});
+			policyOptions.value = (policiesRes.data?.data || []).map((policy: any) => ({
+				text: resolveTranslatedLabel(policy.name, t),
+				value: policy.id,
+			}));
+		} catch {
+			policyOptions.value = [];
+		}
 	}
 
 	async function loadCollectionCatalog() {
@@ -1043,7 +1049,7 @@ export function useModulePermissions() {
 
 	async function save() {
 		if (!hasEdits.value) return;
-		if (userStore.currentUser?.admin_access !== true) return;
+		if (!userHasAdminAccess(userStore.currentUser)) return;
 
 		saving.value = true;
 
@@ -1073,7 +1079,7 @@ export function useModulePermissions() {
 	 * Does not touch `module_bar` or any other settings.
 	 */
 	async function cleanupExtensionData(): Promise<{ clearedValue: boolean; deletedField: boolean }> {
-		if (userStore.currentUser?.admin_access !== true) {
+		if (!userHasAdminAccess(userStore.currentUser)) {
 			throw new Error('Admin access required');
 		}
 
@@ -1164,7 +1170,7 @@ export function useModulePermissions() {
 	}
 
 	async function importPermissionsConfig(raw: unknown) {
-		if (userStore.currentUser?.admin_access !== true) {
+		if (!userHasAdminAccess(userStore.currentUser)) {
 			throw new Error('Admin access required');
 		}
 

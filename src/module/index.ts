@@ -5,6 +5,7 @@ import SettingsView from './settings-view.vue';
 import SidebarView from './sidebar-view.vue';
 import StartPageView from './start-page-view.vue';
 import UsersView from './users-view.vue';
+import { userHasAdminAccess } from '../shared/admin';
 import { installRouteGuard } from './route-guard';
 import { installSidebarEnforcer } from './sidebar-enforcer';
 import { installUsersNavEnforcer } from './users-nav-enforcer';
@@ -65,6 +66,6 @@ export default defineModule({
 		},
 	],
 	preRegisterCheck(user) {
-		return user?.admin_access === true;
+		return userHasAdminAccess(user);
 	},
 });
