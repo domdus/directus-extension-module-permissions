@@ -83,7 +83,7 @@ Some lists (Start Page, Sidebar mode, Own Role Only, Hide Module Navigation) sup
 
 ## Installation
 
-Requires **Directus 11 or 12**.
+Supports **Directus 9, 10, 11 and 12**.
 
 ### npm
 
