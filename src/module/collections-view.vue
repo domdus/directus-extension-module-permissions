@@ -124,13 +124,15 @@
 
 				<div class="field">
 					<label>Visibility</label>
-					<v-select
-						v-model="collectionDraft.visibility"
-						:items="[
-							{ text: 'Hide for matched roles/policies', value: 'hide' },
-							{ text: 'Show only for matched roles/policies', value: 'show' },
-						]"
-					/>
+					<div class="visibility-radios">
+						<v-radio v-model="collectionDraft.visibility" value="hide" label="Hide for matched" block />
+						<v-radio
+							v-model="collectionDraft.visibility"
+							value="show"
+							label="Show only for matched"
+							block
+						/>
+					</div>
 				</div>
 
 				<div class="field">
@@ -300,6 +302,17 @@ onMounted(() => {
 	display: block;
 	margin-bottom: 8px;
 	font-weight: 600;
+}
+
+.visibility-radios {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 10px;
+}
+
+.visibility-radios :deep(.v-radio.block) {
+	width: 100%;
+	margin: 0;
 }
 
 .hint,
