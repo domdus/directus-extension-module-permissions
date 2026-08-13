@@ -149,28 +149,30 @@
 					</div>
 				</div>
 
-				<div class="field">
-					<label>Roles</label>
-					<v-select
-						v-model="sidebarPanelDraft.roles"
-						multiple
-						:items="roleOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select roles"
-					/>
-				</div>
+				<div class="field-row">
+					<div class="field">
+						<label>Roles</label>
+						<v-select
+							v-model="sidebarPanelDraft.roles"
+							multiple
+							:items="roleOptions"
+							item-text="text"
+							item-value="value"
+							placeholder="Select roles"
+						/>
+					</div>
 
-				<div class="field">
-					<label>Policies</label>
-					<v-select
-						v-model="sidebarPanelDraft.policies"
-						multiple
-						:items="policyOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select policies"
-					/>
+					<div class="field">
+						<label>Policies</label>
+						<v-select
+							v-model="sidebarPanelDraft.policies"
+							multiple
+							:items="policyOptions"
+							item-text="text"
+							item-value="value"
+							placeholder="Select policies"
+						/>
+					</div>
 				</div>
 
 				<v-button v-if="hasSidebarPanelRule(sidebarPanelEditingId!)" secondary @click="clearSidebarPanelRule">
@@ -209,28 +211,30 @@
 					/>
 				</div>
 
-				<div class="field">
-					<label>Roles</label>
-					<v-select
-						v-model="sidebarModeDraft.roles"
-						multiple
-						:items="roleOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select roles (optional)"
-					/>
-				</div>
+				<div class="field-row">
+					<div class="field">
+						<label>Roles</label>
+						<v-select
+							v-model="sidebarModeDraft.roles"
+							multiple
+							:items="roleOptions"
+							item-text="text"
+							item-value="value"
+							placeholder="Select roles (optional)"
+						/>
+					</div>
 
-				<div class="field">
-					<label>Policies</label>
-					<v-select
-						v-model="sidebarModeDraft.policies"
-						multiple
-						:items="policyOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select policies (optional)"
-					/>
+					<div class="field">
+						<label>Policies</label>
+						<v-select
+							v-model="sidebarModeDraft.policies"
+							multiple
+							:items="policyOptions"
+							item-text="text"
+							item-value="value"
+							placeholder="Select policies (optional)"
+						/>
+					</div>
 				</div>
 			</div>
 		</v-drawer>
@@ -386,6 +390,20 @@ onMounted(() => {
 	margin-bottom: 8px;
 	font-weight: 600;
 }
+
+.field-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	align-items: start;
+}
+
+@media (max-width: 520px) {
+	.field-row {
+		grid-template-columns: 1fr;
+	}
+}
+
 
 .visibility-radios {
 	display: grid;

@@ -135,28 +135,30 @@
 					</div>
 				</div>
 
-				<div class="field">
-					<label>Roles</label>
-					<v-select
-						v-model="collectionDraft.roles"
-						multiple
-						:items="roleOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select roles"
-					/>
-				</div>
+				<div class="field-row">
+					<div class="field">
+						<label>Roles</label>
+						<v-select
+							v-model="collectionDraft.roles"
+							multiple
+							:items="roleOptions"
+							item-text="text"
+							item-value="value"
+							placeholder="Select roles"
+						/>
+					</div>
 
-				<div class="field">
-					<label>Policies</label>
-					<v-select
-						v-model="collectionDraft.policies"
-						multiple
-						:items="policyOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select policies"
-					/>
+					<div class="field">
+						<label>Policies</label>
+						<v-select
+							v-model="collectionDraft.policies"
+							multiple
+							:items="policyOptions"
+							item-text="text"
+							item-value="value"
+							placeholder="Select policies"
+						/>
+					</div>
 				</div>
 
 				<div class="field checkbox-field">
@@ -303,6 +305,20 @@ onMounted(() => {
 	margin-bottom: 8px;
 	font-weight: 600;
 }
+
+.field-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	align-items: start;
+}
+
+@media (max-width: 520px) {
+	.field-row {
+		grid-template-columns: 1fr;
+	}
+}
+
 
 .visibility-radios {
 	display: grid;

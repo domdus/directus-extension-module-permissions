@@ -92,28 +92,30 @@
 					/>
 				</div>
 
-				<div class="field">
-					<label>Roles</label>
-					<v-select
-						v-model="homeDraft.roles"
-						multiple
-						:items="roleOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select roles (optional)"
-					/>
-				</div>
+				<div class="field-row">
+					<div class="field">
+						<label>Roles</label>
+						<v-select
+							v-model="homeDraft.roles"
+							multiple
+							:items="roleOptions"
+							item-text="text"
+							item-value="value"
+							placeholder="Select roles (optional)"
+						/>
+					</div>
 
-				<div class="field">
-					<label>Policies</label>
-					<v-select
-						v-model="homeDraft.policies"
-						multiple
-						:items="policyOptions"
-						item-text="text"
-						item-value="value"
-						placeholder="Select policies (optional)"
-					/>
+					<div class="field">
+						<label>Policies</label>
+						<v-select
+							v-model="homeDraft.policies"
+							multiple
+							:items="policyOptions"
+							item-text="text"
+							item-value="value"
+							placeholder="Select policies (optional)"
+						/>
+					</div>
 				</div>
 			</div>
 		</v-drawer>
@@ -252,6 +254,20 @@ onMounted(() => {
 	margin-bottom: 8px;
 	font-weight: 600;
 }
+
+.field-row {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+	align-items: start;
+}
+
+@media (max-width: 520px) {
+	.field-row {
+		grid-template-columns: 1fr;
+	}
+}
+
 
 .checkbox-field {
 	margin-top: -4px;
