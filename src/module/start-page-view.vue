@@ -15,7 +15,7 @@
 		</template>
 
 		<template #sidebar>
-			<sidebar-detail icon="info" title="About" close>
+			<sidebar-detail id="about" icon="info" title="About">
 				<p class="sidebar-text">
 					Start pages define where matched users land after login. By default they only apply when Directus
 					has no last page. Enable <strong>Force Redirect</strong> to ignore

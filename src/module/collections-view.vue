@@ -15,7 +15,7 @@
 		</template>
 
 		<template #sidebar>
-			<sidebar-detail icon="info" title="About" close>
+			<sidebar-detail id="about" icon="info" title="About">
 				<p class="sidebar-text">
 					Hide specific collections from the Content module navigation while keeping read permissions for
 					relations and API access. Optional deep-link blocking covers

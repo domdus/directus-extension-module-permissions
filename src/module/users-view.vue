@@ -15,7 +15,7 @@
 		</template>
 
 		<template #sidebar>
-			<sidebar-detail icon="info" title="About" close>
+			<sidebar-detail id="about" icon="info" title="About">
 				<p class="sidebar-text">
 					Control the Users module’s role tree in Module Navigation. Admins are never affected. UI-only — not
 					a security boundary.

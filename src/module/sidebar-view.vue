@@ -15,7 +15,7 @@
 		</template>
 
 		<template #sidebar>
-			<sidebar-detail icon="info" title="About" close>
+			<sidebar-detail id="about" icon="info" title="About">
 				<p class="sidebar-text">
 					Hide individual right-sidebar panels (Layout, Revisions, Comments, …) or force the whole sidebar
 					collapsed/hidden for matched roles and policies. Admins are never affected. This is UI-only — not a

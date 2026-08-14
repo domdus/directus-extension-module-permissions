@@ -15,7 +15,7 @@
 		</template>
 
 		<template #sidebar>
-			<sidebar-detail icon="info" title="About" close>
+			<sidebar-detail id="about" icon="info" title="About">
 				<p class="sidebar-text">
 					Configure the left module bar and optionally hide the middle Module Navigation panel for matched
 					roles/policies. Admins are never affected. Deep links are blocked when a rule disables a module
