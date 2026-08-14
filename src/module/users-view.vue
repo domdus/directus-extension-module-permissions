@@ -36,6 +36,7 @@
 				<v-divider
 					class="section-divider"
 					large
+					:inline-title="false"
 					:style="{ '--v-divider-color': 'var(--theme--border-color-subdued)' }"
 				>
 					<template #icon><v-icon name="person" /></template>
@@ -78,6 +79,7 @@
 				<v-divider
 					class="section-divider add-margin-top"
 					large
+					:inline-title="false"
 					:style="{ '--v-divider-color': 'var(--theme--border-color-subdued)' }"
 				>
 					<template #icon><v-icon name="badge" /></template>
