@@ -45,6 +45,11 @@
 				"source": "src/module/index.ts"
 			},
 			{
+				"type": "endpoint",
+				"name": "module-permissions-endpoint",
+				"source": "src/endpoint/index.ts"
+			},
+			{
 				"type": "hook",
 				"name": "module-permissions-hook",
 				"source": "src/hook/index.ts"
