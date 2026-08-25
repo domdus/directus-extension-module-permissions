@@ -248,10 +248,14 @@ export default defineHook(({ filter, action, init }, { services, database, getSc
 
 		const access = await resolveUserAccessContext(database, accountability);
 
+		// Always resolve from DB — Directus 12.2+ minimal app access no longer
+		// grants read on custom directus_settings fields, so the payload value
+		// is often missing even when config exists.
+		const config = await readModulePermissionsConfig(database);
+
 		for (const row of rows) {
 			if (!row || typeof row !== 'object') continue;
 
-			const config = normalizeConfig(row[MODULE_PERMISSIONS_FIELD]) as ModulePermissionsConfig;
 			const moduleBar = row.module_bar as ModuleBarItem[] | undefined;
 
 			row.module_bar = applyModulePermissions(moduleBar, config, access);
