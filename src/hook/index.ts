@@ -10,7 +10,8 @@ import {
 	getHiddenUsersRoleIds,
 	getNavigationHiddenModules,
 	getUsersAllowedRoleIds,
-	normalizeConfig,
+	isStoredConfigEmpty,
+	parsePermissionsField,
 	resolveHomeForce,
 	resolveHomePath,
 	resolveSidebarMode,
@@ -26,10 +27,15 @@ import {
 
 type Accountability = {
 	admin?: boolean | null;
+	admin_access?: boolean | null;
 	user?: string | null;
 	role?: string | null;
 	roles?: string[] | null;
 };
+
+function isAdminAccountability(accountability: Accountability | null | undefined): boolean {
+	return accountability?.admin === true || accountability?.admin_access === true;
+}
 
 async function resolveUserAccessContext(
 	database: any,
@@ -111,8 +117,19 @@ async function resolveUserAccessContext(
 
 function getSettingsRows(payload: unknown): Record<string, any>[] | null {
 	if (Array.isArray(payload)) return payload;
-	if (payload && typeof payload === 'object' && Array.isArray((payload as any).data)) {
-		return (payload as any).data;
+	if (payload && typeof payload === 'object') {
+		if (Array.isArray((payload as any).data)) {
+			return (payload as any).data;
+		}
+
+		// Directus 11 settings.read may pass the singleton object directly.
+		if (
+			'id' in (payload as any) ||
+			'module_bar' in (payload as any) ||
+			MODULE_PERMISSIONS_FIELD in (payload as any)
+		) {
+			return [payload as Record<string, any>];
+		}
 	}
 	return null;
 }
@@ -137,10 +154,23 @@ function getCollectionsPayload(payload: unknown): { list: any[]; wrap?: (list: a
 async function readModulePermissionsConfig(database: any): Promise<ModulePermissionsConfig> {
 	try {
 		const row = await database('directus_settings').select(MODULE_PERMISSIONS_FIELD).first();
-		return normalizeConfig(row?.[MODULE_PERMISSIONS_FIELD]);
+		return parsePermissionsField(row?.[MODULE_PERMISSIONS_FIELD]);
 	} catch {
-		return { ...EMPTY_MODULE_PERMISSIONS };
+		return {
+			...EMPTY_MODULE_PERMISSIONS,
+			rules: [],
+			homes: [],
+			collections: [],
+			sidebar_panels: [],
+			sidebar_modes: [],
+			users: { own_role_only: [], roles: [], hide_navigation: [] },
+		};
 	}
+}
+
+function resolveConfig(dbConfig: ModulePermissionsConfig, payloadValue: unknown): ModulePermissionsConfig {
+	if (!isStoredConfigEmpty(dbConfig)) return dbConfig;
+	return parsePermissionsField(payloadValue);
 }
 
 async function ensureModulePermissionsField(services: any, getSchema: () => Promise<any>, database: any, logger: any) {
@@ -221,7 +251,10 @@ export default defineHook(({ filter, action, init }, { services, database, getSc
 
 	const ensureOnce = () => {
 		if (!fieldReady) {
-			fieldReady = ensureModulePermissionsField(services, getSchema, database, logger);
+			fieldReady = ensureModulePermissionsField(services, getSchema, database, logger).catch((error) => {
+				fieldReady = null;
+				throw error;
+			});
 		}
 		return fieldReady;
 	};
@@ -239,7 +272,7 @@ export default defineHook(({ filter, action, init }, { services, database, getSc
 
 		const accountability: Accountability | null = context?.accountability ?? null;
 
-		if (accountability?.admin) {
+		if (isAdminAccountability(accountability)) {
 			return payload;
 		}
 
@@ -248,14 +281,15 @@ export default defineHook(({ filter, action, init }, { services, database, getSc
 
 		const access = await resolveUserAccessContext(database, accountability);
 
-		// Always resolve from DB — Directus 12.2+ minimal app access no longer
-		// grants read on custom directus_settings fields, so the payload value
-		// is often missing even when config exists.
-		const config = await readModulePermissionsConfig(database);
+		// Directus 12.2+ minimal app access omits custom settings fields from the
+		// payload, so prefer the DB. Directus 11 still allowlists the field — if
+		// knex returns an unparsed JSON string, fall back to the payload value.
+		const dbConfig = await readModulePermissionsConfig(database);
 
 		for (const row of rows) {
 			if (!row || typeof row !== 'object') continue;
 
+			const config = resolveConfig(dbConfig, row[MODULE_PERMISSIONS_FIELD]);
 			const moduleBar = row.module_bar as ModuleBarItem[] | undefined;
 
 			row.module_bar = applyModulePermissions(moduleBar, config, access);
@@ -291,7 +325,7 @@ export default defineHook(({ filter, action, init }, { services, database, getSc
 		await ensureOnce();
 
 		const accountability: Accountability | null = context?.accountability ?? null;
-		if (accountability?.admin) {
+		if (isAdminAccountability(accountability)) {
 			return payload;
 		}
 
@@ -315,7 +349,7 @@ export default defineHook(({ filter, action, init }, { services, database, getSc
 		await ensureOnce();
 
 		const accountability: Accountability | null = context?.accountability ?? null;
-		if (!accountability?.user || accountability.admin) {
+		if (!accountability?.user || isAdminAccountability(accountability)) {
 			return payload;
 		}
 
@@ -337,7 +371,7 @@ export default defineHook(({ filter, action, init }, { services, database, getSc
 	filter('settings.update', async (payload: any, _meta: unknown, context: any) => {
 		const accountability: Accountability | null = context?.accountability ?? null;
 
-		if (accountability?.admin) {
+		if (isAdminAccountability(accountability)) {
 			return payload;
 		}
 

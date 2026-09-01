@@ -234,6 +234,41 @@ export function normalizeConfig(raw: unknown): ModulePermissionsConfig {
 	};
 }
 
+/**
+ * Knex may return JSON columns as strings (MySQL / SQLite). Directus ItemsService
+ * already parses them, which is why payload-based reads worked on Directus 11.
+ */
+export function parseStoredJson(raw: unknown): unknown {
+	if (typeof raw !== 'string') return raw;
+
+	const trimmed = raw.trim();
+	if (!trimmed) return null;
+	if (trimmed[0] !== '{' && trimmed[0] !== '[') return raw;
+
+	try {
+		return JSON.parse(trimmed);
+	} catch {
+		return raw;
+	}
+}
+
+export function parsePermissionsField(raw: unknown): ModulePermissionsConfig {
+	return normalizeConfig(parseStoredJson(raw));
+}
+
+export function isStoredConfigEmpty(config: ModulePermissionsConfig): boolean {
+	return (
+		(config.rules?.length ?? 0) === 0 &&
+		(config.homes?.length ?? 0) === 0 &&
+		(config.collections?.length ?? 0) === 0 &&
+		(config.sidebar_panels?.length ?? 0) === 0 &&
+		(config.sidebar_modes?.length ?? 0) === 0 &&
+		(config.users?.own_role_only?.length ?? 0) === 0 &&
+		(config.users?.roles?.length ?? 0) === 0 &&
+		(config.users?.hide_navigation?.length ?? 0) === 0
+	);
+}
+
 export function ruleHasTargets(rule: { roles?: string[]; policies?: string[] }): boolean {
 	return (rule.roles?.length ?? 0) > 0 || (rule.policies?.length ?? 0) > 0;
 }

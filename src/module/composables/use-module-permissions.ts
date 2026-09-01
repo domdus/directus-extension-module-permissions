@@ -1004,6 +1004,63 @@ export function useModulePermissions() {
 		}
 	}
 
+	async function loadSettingsRow(): Promise<Record<string, any>> {
+		try {
+			const response = await api.get('/module-permissions/config');
+			const data = response.data?.data;
+			if (data && typeof data === 'object') return data;
+		} catch {
+			// Endpoint missing on an older bundle — fall through to /settings.
+		}
+
+		try {
+			const response = await api.get('/settings', {
+				params: {
+					fields: ['module_bar', MODULE_PERMISSIONS_FIELD],
+				},
+			});
+			const data = response.data?.data;
+			return (Array.isArray(data) ? data[0] : data) || {};
+		} catch {
+			// Directus 11 / 12.2+: custom settings fields are not allowlisted, or
+			// the field was deleted. Never fail the whole page for that.
+			const response = await api.get('/settings', {
+				params: {
+					fields: ['module_bar'],
+				},
+			});
+			const data = response.data?.data;
+			return (Array.isArray(data) ? data[0] : data) || {};
+		}
+	}
+
+	async function persistSettings(payload: Record<string, unknown>) {
+		try {
+			await api.patch('/module-permissions/config', payload);
+			return;
+		} catch {
+			// Older bundle without /config — use settings API.
+		}
+
+		try {
+			await api.patch('/settings', payload);
+		} catch (error: any) {
+			if (!('module_bar' in payload) || !(MODULE_PERMISSIONS_FIELD in payload)) {
+				throw error;
+			}
+
+			await api.patch('/settings', { module_bar: payload.module_bar });
+
+			try {
+				await api.patch('/settings', {
+					[MODULE_PERMISSIONS_FIELD]: payload[MODULE_PERMISSIONS_FIELD],
+				});
+			} catch {
+				throw error;
+			}
+		}
+	}
+
 	async function load() {
 		loading.value = true;
 
@@ -1014,14 +1071,7 @@ export function useModulePermissions() {
 		}
 
 		try {
-			const response = await api.get('/settings', {
-				params: {
-					fields: ['module_bar', MODULE_PERMISSIONS_FIELD],
-				},
-			});
-
-			const data = response.data?.data;
-			const row = Array.isArray(data) ? data[0] : data;
+			const row = await loadSettingsRow();
 
 			const bar = mergeMissingModules(Array.isArray(row?.module_bar) ? cloneDeep(row.module_bar) : []);
 			const config = normalizeConfig(row?.[MODULE_PERMISSIONS_FIELD]);
@@ -1030,9 +1080,25 @@ export function useModulePermissions() {
 			permissions.value = config;
 			initialModuleBar.value = cloneDeep(bar);
 			initialPermissions.value = cloneDeep(config);
+		} catch {
+			const bar = mergeMissingModules([]);
+			moduleBar.value = bar;
+			permissions.value = cloneDeep(EMPTY_MODULE_PERMISSIONS);
+			initialModuleBar.value = cloneDeep(bar);
+			initialPermissions.value = cloneDeep(EMPTY_MODULE_PERMISSIONS);
+		}
 
+		try {
 			await loadRolesAndPolicies();
+		} catch {
+			roleOptions.value = [];
+			policyOptions.value = [];
+		}
+
+		try {
 			await loadCollectionCatalog();
+		} catch {
+			collectionCatalog.value = [];
 		} finally {
 			loading.value = false;
 		}
@@ -1059,7 +1125,7 @@ export function useModulePermissions() {
 				[MODULE_PERMISSIONS_FIELD]: serializePermissionsConfig(permissions.value),
 			};
 
-			await api.patch('/settings', payload);
+			await persistSettings(payload);
 
 			try {
 				await settingsStore.hydrate?.();
@@ -1202,7 +1268,7 @@ export function useModulePermissions() {
 
 		permissions.value = next;
 
-		await api.patch('/settings', {
+		await persistSettings({
 			[MODULE_PERMISSIONS_FIELD]: next,
 		});
 
