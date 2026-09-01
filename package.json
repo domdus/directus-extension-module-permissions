@@ -2,7 +2,7 @@
 	"name": "directus-extension-module-permissions",
 	"description": "Control Studio UI visibility for the module bar, Module Navigation, Content nav, Users role tree, Sidebar, and Start Page by role and policy",
 	"icon": "security",
-	"version": "1.0.13",
+	"version": "1.0.14",
 	"license": "MIT",
 	"keywords": [
 		"directus",
