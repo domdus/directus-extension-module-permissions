@@ -572,8 +572,8 @@ function installRolesClientFilter(pinia: any): void {
 					configurable: true,
 					enumerable: true,
 					get: () => {
-						const responseType = this.responseType;
-						if (responseType && responseType !== 'text' && responseType !== '') {
+						const responseType: string = this.responseType;
+						if (responseType && responseType !== 'text') {
 							return nativeResponseGet.call(this);
 						}
 						return (this as any).responseText;
